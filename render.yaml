@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: jingjian-api
+    runtime: node
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - { key: WEB_ORIGIN, sync: false }
+      - { key: OPENAI_API_KEY, sync: false }
+      - { key: SUPABASE_URL, sync: false }
+      - { key: SUPABASE_SERVICE_ROLE_KEY, sync: false }
+      - { key: SUPABASE_STORAGE_BUCKET, value: competitor-assets }
+  - type: cron
+    name: jingjian-monitor
+    runtime: node
+    schedule: "0 1 * * 1,4"
+    buildCommand: pnpm install --frozen-lockfile
+    startCommand: pnpm monitor:run

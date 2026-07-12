@@ -1,0 +1,4 @@
+import { env } from "cloudflare:workers";
+import { getDb } from "../../../db";
+import { materialFiles } from "../../../db/schema";
+export async function POST(req:Request){const form=await req.formData();const file=form.get("file");const materialId=Number(form.get("materialId"));if(!(file instanceof File)||!materialId)return Response.json({error:"file and materialId required"},{status:400});if(file.size>20*1024*1024)return Response.json({error:"文件不能超过20MB"},{status:400});const key=`materials/${materialId}/${crypto.randomUUID()}-${file.name}`;await env.UPLOADS.put(key,await file.arrayBuffer(),{httpMetadata:{contentType:file.type}});const [row]=await getDb().insert(materialFiles).values({materialId,objectKey:key,filename:file.name,contentType:file.type||"application/octet-stream",size:file.size}).returning();return Response.json({file:row},{status:201})}

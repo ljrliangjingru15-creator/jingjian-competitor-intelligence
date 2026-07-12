@@ -1,0 +1,10 @@
+create extension if not exists pgcrypto;
+create table if not exists competitors(id uuid primary key default gen_random_uuid(),name text not null unique,type text,city text,business text,website text,accounts jsonb default '{}'::jsonb,notes text,created_at timestamptz default now());
+create table if not exists monitor_tasks(id uuid primary key default gen_random_uuid(),competitor_id uuid references competitors(id) on delete cascade,region text,keywords text[],sources text[],frequency text,review_mode text,enabled boolean default true,last_run_at timestamptz,created_at timestamptz default now());
+create table if not exists discoveries(id uuid primary key default gen_random_uuid(),competitor_id uuid references competitors(id),title text not null,url text not null unique,source text,summary text,confidence text,status text default '待审核',published_at timestamptz,evidence_path text,created_at timestamptz default now());
+create table if not exists materials(id uuid primary key default gen_random_uuid(),competitor_id uuid references competitors(id),title text not null,source_url text,platform text,tag text,status text default '待分析',note text,source_type text,analysis jsonb,created_at timestamptz default now());
+create table if not exists material_files(id uuid primary key default gen_random_uuid(),material_id uuid references materials(id) on delete cascade,object_path text not null,filename text,content_type text,size bigint,created_at timestamptz default now());
+create table if not exists reports(id uuid primary key default gen_random_uuid(),period text,format text,object_path text,status text,created_at timestamptz default now());
+create index if not exists discoveries_competitor_idx on discoveries(competitor_id,created_at desc);
+create index if not exists materials_competitor_idx on materials(competitor_id,created_at desc);
+alter table competitors enable row level security; alter table monitor_tasks enable row level security; alter table discoveries enable row level security; alter table materials enable row level security; alter table material_files enable row level security; alter table reports enable row level security;
