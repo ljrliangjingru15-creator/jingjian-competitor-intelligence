@@ -33,9 +33,13 @@ export default function Home() {
   async function submit(analyze: boolean) {
     if (!org.trim() || (!url.trim() && files.length === 0)) { setNotice("请填写机构名称，并添加链接或截图"); return; }
     const platform = url.includes("xiaohongshu") ? "小红书" : url.includes("weixin") ? "微信公众号" : "待识别";
+    setNotice("正在写入资料库…");
+    const response=await fetch("/api/materials", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ organization:org, title:note || "新收集的外宣内容", sourceUrl:url, platform, status:"待分析", note, sourceType:"manual" }) }).catch(()=>null);
+    const saved=await response?.json().catch(()=>null);
+    if(!response?.ok||!saved?.material?.id){setNotice(`写入失败：${saved?.error||"无法连接数据库，请检查Vercel环境变量"}`);return;}
     setItems(v => [{ id: Date.now(), org, title: note || "新收集的外宣内容", platform, date: "今天", tag: "待分类", status: analyze ? "已分析" : "待分析", tone: "blue" }, ...v]);
-    const saved=await fetch("/api/materials", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ organization:org, title:note || "新收集的外宣内容", sourceUrl:url, platform, status:"待分析", note, sourceType:"manual" }) }).then(r=>r.json()).catch(()=>null);
-    if(saved?.material?.id){for(const file of files){const form=new FormData();form.append("file",file);form.append("materialId",String(saved.material.id));await fetch("/api/uploads",{method:"POST",body:form});}if(analyze)await fetch("/api/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({materialId:saved.material.id,organization:org,title:note||"新收集的外宣内容",sourceUrl:url,note})}).catch(()=>null);}
+    for(const file of files){const form=new FormData();form.append("file",file);form.append("materialId",String(saved.material.id));const upload=await fetch("/api/uploads",{method:"POST",body:form});if(!upload.ok){const e=await upload.json().catch(()=>null);setNotice(`素材已入库，但附件上传失败：${e?.error||"未知错误"}`);return;}}
+    if(analyze){const analysis=await fetch("/api/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({materialId:saved.material.id,organization:org,title:note||"新收集的外宣内容",sourceUrl:url,note})});if(!analysis.ok){const e=await analysis.json().catch(()=>null);setNotice(`素材已入库，但AI分析失败：${e?.error?.message||e?.error||"请检查OPENAI_API_KEY"}`);return;}}
     setNotice(analyze ? "已归档并完成初步分析" : "已加入 2026 年 7 月竞品库");
     setOrg(""); setUrl(""); setNote(""); setFiles([]);
   }
