@@ -1,2 +1,2 @@
-import { env } from "cloudflare:workers";
-export async function GET(_:Request,{params}:{params:Promise<{key:string}>}){const {key}=await params;const object=await env.UPLOADS.get(decodeURIComponent(key));if(!object)return new Response("Not found",{status:404});return new Response(object.body,{headers:{"content-type":object.httpMetadata?.contentType||"application/octet-stream","content-disposition":`attachment; filename="${key.split('/').pop()}"`}})}
+import {getSupabaseAdmin,storageBucket} from "../../../../lib/supabase-admin";
+export async function GET(_:Request,{params}:{params:Promise<{key:string}>}){const {key}=await params;const {data,error}=await getSupabaseAdmin().storage.from(storageBucket()).createSignedUrl(decodeURIComponent(key),300,{download:true});if(error)return Response.json({error:error.message},{status:404});return Response.redirect(data.signedUrl)}

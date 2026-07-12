@@ -1,17 +1,3 @@
-import { desc } from "drizzle-orm";
-import { getDb } from "../../../db";
-import { materials } from "../../../db/schema";
-
-export async function GET() {
-  try { return Response.json({ materials: await getDb().select().from(materials).orderBy(desc(materials.createdAt)).limit(200) }); }
-  catch { return Response.json({ materials: [], setupRequired: true }); }
-}
-
-export async function POST(request: Request) {
-  const p = await request.json() as { organization?:string; title?:string; sourceUrl?:string; platform?:string; tag?:string; status?:string; note?:string; sourceType?:string };
-  if (!p.organization?.trim()) return Response.json({ error: "organization is required" }, { status: 400 });
-  try {
-    const [material] = await getDb().insert(materials).values({ organization:p.organization.trim(), title:p.title?.trim() || "新收集的外宣内容", sourceUrl:p.sourceUrl, platform:p.platform || "待识别", tag:p.tag || "待分类", status:p.status || "待分析", note:p.note, sourceType:p.sourceType || "manual" }).returning();
-    return Response.json({ material }, { status: 201 });
-  } catch (error) { return Response.json({ error: error instanceof Error ? error.message : "database unavailable" }, { status: 500 }); }
-}
+import {getSupabaseAdmin} from "../../../lib/supabase-admin";
+export async function GET(){try{const {data,error}=await getSupabaseAdmin().from("materials").select("*").order("created_at",{ascending:false}).limit(200);if(error)throw error;return Response.json({materials:data})}catch(e){return Response.json({materials:[],error:e instanceof Error?e.message:"unavailable"},{status:500})}}
+export async function POST(req:Request){const p=await req.json() as any;if(!p.organization?.trim())return Response.json({error:"organization is required"},{status:400});const sb=getSupabaseAdmin();let {data:comp}=await sb.from("competitors").select("id").eq("name",p.organization.trim()).maybeSingle();if(!comp){const r=await sb.from("competitors").insert({name:p.organization.trim()}).select("id").single();comp=r.data}const {data,error}=await sb.from("materials").insert({competitor_id:comp?.id,title:p.title?.trim()||"新收集的外宣内容",source_url:p.sourceUrl,platform:p.platform||"待识别",tag:p.tag||"待分类",status:p.status||"待分析",note:p.note,source_type:p.sourceType||"manual"}).select().single();return error?Response.json({error:error.message},{status:500}):Response.json({material:data},{status:201})}

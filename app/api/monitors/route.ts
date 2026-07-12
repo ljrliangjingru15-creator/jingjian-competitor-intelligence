@@ -1,14 +1,3 @@
-import { desc } from "drizzle-orm";
-import { getDb } from "../../../db";
-import { monitorTasks } from "../../../db/schema";
-
-export async function GET() {
-  try { return Response.json({ monitors: await getDb().select().from(monitorTasks).orderBy(desc(monitorTasks.createdAt)) }); }
-  catch { return Response.json({ monitors: [], setupRequired: true }); }
-}
-export async function POST(request: Request) {
-  const p = await request.json() as { organization?:string; region?:string; keywords?:string; sources?:string[]; frequency?:string; reviewMode?:string };
-  if (!p.organization?.trim()) return Response.json({ error:"organization is required" }, { status:400 });
-  try { const [monitor] = await getDb().insert(monitorTasks).values({ organization:p.organization.trim(), region:p.region || "全国 + 广州及大湾区", keywords:p.keywords || "", sources:JSON.stringify(p.sources || []), frequency:p.frequency || "每周一、周四", reviewMode:p.reviewMode || "先进入审核箱" }).returning(); return Response.json({ monitor }, { status:201 }); }
-  catch (error) { return Response.json({ error:error instanceof Error ? error.message : "database unavailable" }, { status:500 }); }
-}
+import {getSupabaseAdmin} from "../../../lib/supabase-admin";
+export async function GET(){const {data,error}=await getSupabaseAdmin().from("monitor_tasks").select("*,competitors(name)").order("created_at",{ascending:false});return error?Response.json({error:error.message},{status:500}):Response.json({monitors:data})}
+export async function POST(req:Request){const p=await req.json() as any,sb=getSupabaseAdmin();let {data:c}=await sb.from("competitors").select("id").eq("name",p.organization).maybeSingle();if(!c){const x=await sb.from("competitors").insert({name:p.organization}).select("id").single();c=x.data}const {data,error}=await sb.from("monitor_tasks").insert({competitor_id:c?.id,region:p.region,keywords:String(p.keywords||"").split(/[、,]/).filter(Boolean),sources:p.sources||[],frequency:p.frequency,review_mode:p.reviewMode}).select().single();return error?Response.json({error:error.message},{status:500}):Response.json({monitor:data},{status:201})}
