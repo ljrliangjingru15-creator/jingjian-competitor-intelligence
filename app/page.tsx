@@ -41,8 +41,8 @@ export default function Home() {
     if(!response?.ok||!saved?.material?.id){setNotice(`写入失败：${saved?.error||"无法连接数据库，请检查Vercel环境变量"}`);return;}
     setItems(v => [{ id: Date.now(), org, title: note || "新收集的外宣内容", platform, date: "今天", tag: "待分类", status: analyze ? "已分析" : "待分析", tone: "blue" }, ...v]);
     for(const file of files){const form=new FormData();form.append("file",file);form.append("materialId",String(saved.material.id));const upload=await fetch("/api/uploads",{method:"POST",body:form});if(!upload.ok){const e=await upload.json().catch(()=>null);setNotice(`素材已入库，但附件上传失败：${e?.error||"未知错误"}`);return;}}
-    if(analyze){const analysis=await fetch("/api/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({materialId:saved.material.id,organization:org,title:note||"新收集的外宣内容",sourceUrl:url,note})});if(!analysis.ok){const e=await analysis.json().catch(()=>null);setNotice(`素材已入库，但AI分析失败：${e?.error?.message||e?.error||"请检查OPENAI_API_KEY"}`);return;}}
-    setNotice(analyze ? "已归档并完成初步分析" : "已加入 2026 年 7 月竞品库");
+    let analysisMode="";if(analyze){const analysis=await fetch("/api/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({materialId:saved.material.id,organization:org,title:note||"新收集的外宣内容",sourceUrl:url,note})});const result=await analysis.json().catch(()=>null);if(!analysis.ok){setNotice(`素材已入库，但分析失败：${result?.error?.message||result?.error||"未知错误"}`);return;}analysisMode=result?.mode;}
+    setNotice(analyze ? analysisMode==="basic"?"已归档；OpenAI额度不足，已完成免费基础分析":"已归档并完成AI分析" : "已加入 2026 年 7 月竞品库");
     setOrg(""); setUrl(""); setNote(""); setFiles([]);
     await loadMaterials();
   }
