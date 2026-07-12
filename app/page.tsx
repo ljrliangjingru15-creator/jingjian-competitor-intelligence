@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Item = { id: number; org: string; title: string; platform: string; date: string; tag: string; status: string; tone: string };
 
@@ -29,6 +29,8 @@ export default function Home() {
   const [sources, setSources] = useState(["官网与新闻", "高校合作公告", "公开活动页"]);
 
   const visible = useMemo(() => items.filter(i => tab === "全部素材" || (tab === "已分析" ? i.status === "已分析" : i.status === "待分析")), [items, tab]);
+  async function loadMaterials(){const d=await fetch("/api/materials",{cache:"no-store"}).then(r=>r.json()).catch(()=>null);if(d?.materials)setItems(d.materials.map((m:any)=>({id:m.id,org:m.competitors?.name||"未知机构",title:m.title,platform:m.platform||"待识别",date:new Date(m.created_at).toLocaleDateString("zh-CN"),tag:m.tag||"待分类",status:m.status||"待分析",tone:"blue"})))}
+  useEffect(()=>{loadMaterials()},[]);
 
   async function submit(analyze: boolean) {
     if (!org.trim() || (!url.trim() && files.length === 0)) { setNotice("请填写机构名称，并添加链接或截图"); return; }
@@ -42,6 +44,7 @@ export default function Home() {
     if(analyze){const analysis=await fetch("/api/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({materialId:saved.material.id,organization:org,title:note||"新收集的外宣内容",sourceUrl:url,note})});if(!analysis.ok){const e=await analysis.json().catch(()=>null);setNotice(`素材已入库，但AI分析失败：${e?.error?.message||e?.error||"请检查OPENAI_API_KEY"}`);return;}}
     setNotice(analyze ? "已归档并完成初步分析" : "已加入 2026 年 7 月竞品库");
     setOrg(""); setUrl(""); setNote(""); setFiles([]);
+    await loadMaterials();
   }
 
   return <main>
