@@ -1,54 +1,57 @@
 # Design QA
 
-- Source visual truth: `/Users/jingru/Desktop/微信图片_20260713122823_510_183.jpg`
-- Implementation: Next.js production build in this repository
+- Source visual truth: `/Users/jingru/Desktop/微信图片_20260713164438_519_183.jpg`
+- Implementation: local Next.js workspace; production-preview URL pending branch push
 - Intended viewport: desktop 1440 × 1100; responsive follow-up at 390 × 844
-- State: dashboard landing page, default/empty-loading state
+- State: dashboard landing page plus representative list/detail routes
 - Implementation screenshot: unavailable
 
 ## Full-view comparison evidence
 
-The reference image was opened and inspected. It establishes the requested palette (`#9F9DF3`, `#FF9BB3`, `#C9EBCA`, `#D5D6F2`, `#6353AC`), white/pastel surfaces, generous rounded corners, soft elevation, and bold geometric typography.
+The source image was opened at original resolution and inspected. Its defining system is a black outer canvas, warm off-white product surfaces, low-saturation lavender and pale acid-yellow accents, monospaced editorial display type, thin dark outlines, restrained corner radii, and almost-flat elevation.
 
-The implementation compiled successfully and its server-rendered HTML contains the new app shell and theme classes. A browser-rendered implementation screenshot could not be captured because this workspace cannot bind a local preview server, and the selected in-app browser blocks local/data preview URLs. Per the browser safety policy, no alternate browser workaround was attempted.
+The implementation has been rebuilt around those tokens while preserving the existing dashboard information architecture and workflows. ESLint, TypeScript, unit tests, and a full Next.js production build pass. The sandbox does not permit binding a local web server (`listen EPERM`), so a rendered implementation screenshot cannot be captured until the branch is pushed and Vercel creates a Preview Deployment. No generated or indirect image has been substituted as browser evidence.
 
 ## Focused region comparison evidence
 
-Blocked for the same reason. The planned focused checks were:
+Blocked pending a deployable preview. The next visual pass must inspect:
 
-- header navigation wrapping and active state;
-- dashboard hero typography and action grouping;
-- seven KPI cards and pastel color rotation;
-- form fields, file input, buttons, and focus states;
-- card radius and table readability;
-- responsive navigation and two-column collapse.
+- black shell, warm-white workspace inset, and header density;
+- active lavender navigation state and pale-yellow hover/status states;
+- dashboard hero typography, highlight treatment, and CTA contrast;
+- KPI grid, form controls, tables, review panels, and competitor insight cards;
+- desktop navigation wrapping at 1240px;
+- mobile navigation overflow and two-column collapse at 390px.
 
 ## Findings
 
-- [P1] Visual implementation cannot be compared against the reference in a rendered browser.
+- [P1] Rendered fidelity cannot yet be compared against the new reference.
   - Location: all redesigned routes.
-  - Evidence: source reference is available; implementation screenshot is unavailable.
-  - Impact: spacing, wrapping, and responsive polish cannot be certified from code/build output alone.
-  - Fix: deploy this commit to a Vercel Preview or Production deployment, then capture the landing page and key routes in the in-app browser and complete a second QA pass.
+  - Evidence: source image is available; local server startup is denied by the execution sandbox and no new Preview Deployment exists yet.
+  - Impact: line wrapping, browser font rendering, content overflow, and responsive polish cannot be certified from code/build output alone.
+  - Fix: push `codex/avenia-editorial-ui`, open its stable Vercel Preview, and capture the dashboard plus one dense route on desktop and mobile.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: implemented with the system geometric sans stack and heavier display weights; rendered fidelity not yet verified.
-- Spacing and layout rhythm: large radii, elevated cards, responsive grids, and navigation wrap rules implemented; rendered fidelity not yet verified.
-- Colors and visual tokens: all five reference colors are mapped to CSS tokens and used across navigation, KPI cards, panels, chips, and states.
-- Image quality and asset fidelity: no reference mascot/art asset was required because the user requested the reference image's color language, not an exact recreation of its mobile screens.
-- Copy and content: existing product copy and workflows are preserved.
+- Fonts and typography: implemented with a system monospaced stack for headings, navigation, labels, and data, while retaining a readable sans stack for body copy; rendered fidelity not yet verified.
+- Spacing and layout rhythm: large decorative bubbles and heavy pastel elevation were replaced with compact 5–12px radii, thin outlines, measured gutters, and a dark-frame/light-workspace composition.
+- Colors and visual tokens: primary black `#0A0A0A`, warm off-white `#F4EFEB` / `#FFFAF6`, lavender `#C9C8FF`, pale acid yellow `#EFF2A3`, and muted violet `#7771D8` are mapped across the product.
+- Image quality and asset fidelity: the reference was used as a visual-system source, not copied as a landing-page composition; no third-party logo or product render was introduced.
+- Copy and content: existing material submission, review, monitoring, competitor analysis, and reporting workflows remain intact.
 
 ## Comparison history
 
-- Iteration 1: implementation and production build completed; browser capture blocked before visual comparison.
+- Iteration 1: new reference analyzed and global visual tokens replaced.
+- Iteration 2: header, hero, cards, forms, lists, monitoring, competitor profiles, reports, settings, modals, and mobile overrides aligned to the new editorial fintech system.
+- Iteration 3: heading action contrast corrected; lint, typecheck, tests, and production build passed.
+- Iteration 4: local visual capture attempted; blocked by sandbox port-binding restriction. Awaiting Preview Deployment.
 
 ## Implementation checklist
 
-- Deploy a previewable build.
-- Capture desktop landing page at 1440 × 1100.
+- Push `codex/avenia-editorial-ui` and wait for Vercel Preview.
+- Capture dashboard at 1440 × 1100.
 - Capture dashboard and competitor profile at 390 × 844.
-- Verify navigation, primary form controls, and route transitions.
-- Fix any P0/P1/P2 findings and repeat comparison.
+- Verify navigation, primary actions, dense tables, drawers, and route transitions.
+- Fix any P0/P1/P2 visual findings and repeat comparison.
 
 final result: blocked
