@@ -1,3 +1,12 @@
-import {getSupabaseAdmin} from "../../../lib/supabase-admin";
-function basicAnalysis(organization:string,title:string,sourceUrl:string,note:string){const text=`${title} ${note}`;const theme=/报告|白皮书/.test(text)?"行业报告":/活动|讲座|直播|私享会/.test(text)?"活动获客":/录取|offer/i.test(text)?"录取案例":/课程|产品|服务/.test(text)?"产品推广":"品牌内容";const platform=sourceUrl.includes("xiaohongshu")?"小红书":sourceUrl.includes("weixin")?"微信公众号":sourceUrl?"网页链接":"上传素材";return{mode:"basic_rules",facts:{organization,title,source_url:sourceUrl||null,platform,note:note||null},classification:{theme,audience:"待人工确认",content_type:sourceUrl?"链接内容":"图片或附件"},analysis:{marketing_goal:theme==="活动获客"?"可能用于活动报名和线索转化":theme==="行业报告"?"可能用于建立专业权威并引导资料领取":"可能用于品牌曝光或产品教育",conversion_path:"公开内容 → 咨询或资料入口（待核实）"},recommendations:{verify:["核对原文CTA","确认目标客群","补充互动数据"],use:["保留原始链接与截图作为证据"]},confidence:{level:"低",reason:"免费基础分析仅依据标题、链接和备注，不包含截图视觉理解或网页正文读取"}}}
-export async function POST(req:Request){const {materialId,organization,title,sourceUrl,note}=await req.json() as Record<string,string>,key=process.env.OPENAI_API_KEY,sb=getSupabaseAdmin();let analysis:any,mode="ai";if(key){const prompt=`你是留学行业竞品营销分析师。机构:${organization}\n标题:${title}\n链接:${sourceUrl||"无"}\n备注:${note||"无"}\n只输出JSON：facts,classification,analysis,recommendations,confidence。区分事实和推断。`;const r=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${key}`,"content-type":"application/json"},body:JSON.stringify({model:"gpt-5.6-terra",input:prompt})}),data=await r.json() as any;if(r.ok){try{analysis=JSON.parse(data.output_text||"{}")}catch{analysis=basicAnalysis(organization,title,sourceUrl,note);mode="basic"}}else if(r.status===429||/quota|billing/i.test(JSON.stringify(data))){analysis=basicAnalysis(organization,title,sourceUrl,note);mode="basic"}else return Response.json(data,{status:r.status})}else{analysis=basicAnalysis(organization,title,sourceUrl,note);mode="basic"}const {error}=await sb.from("materials").update({analysis,status:mode==="ai"?"已分析":"基础分析"}).eq("id",materialId);return error?Response.json({error:error.message},{status:500}):Response.json({analysis,mode})}
+import {getSupabaseAdmin,describeSupabaseError} from "../../../lib/supabase-admin";
+import {analyzeMaterial} from "../../../lib/analysis";
+
+export async function POST(req:Request){
+  try{
+    const body=await req.json() as {materialId?:string},sb=getSupabaseAdmin();
+    if(!body.materialId)return Response.json({error:"materialId required"},{status:400});
+    const {data:material,error}=await sb.from("materials").select("*,competitors(name)").eq("id",body.materialId).single();
+    if(error||!material)return Response.json({error:error?.message||"素材不存在"},{status:404});
+    return Response.json(await analyzeMaterial(sb,material));
+  }catch(error){return Response.json({error:describeSupabaseError(error)},{status:500})}
+}

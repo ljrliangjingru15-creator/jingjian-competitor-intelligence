@@ -1,4 +1,5 @@
 import {Document,Packer,Paragraph,HeadingLevel,Table,TableRow,TableCell,TextRun} from "docx";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import pptxgen from "pptxgenjs";
 import {getSupabaseAdmin,storageBucket} from "../../../../lib/supabase-admin";
 export const runtime="nodejs";export const maxDuration=60;

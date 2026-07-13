@@ -1,0 +1,4 @@
+import {getSupabaseAdmin,describeSupabaseError} from "../../../lib/supabase-admin";
+export async function GET(){try{const {data,error}=await getSupabaseAdmin().from("system_settings").select("key,value,updated_at").eq("is_secret",false).order("key");if(error)throw error;return Response.json({settings:data||[]})}catch(error){return Response.json({settings:[],error:describeSupabaseError(error)},{status:500})}}
+export async function PUT(req:Request){try{const {key,value}=await req.json();if(!/^[a-z][a-z0-9_.-]{1,80}$/.test(String(key)))return Response.json({error:"设置键格式不正确"},{status:400});const {data,error}=await getSupabaseAdmin().from("system_settings").upsert({key,value,is_secret:false}).select("key,value,updated_at").single();if(error)throw error;return Response.json({setting:data})}catch(error){return Response.json({error:describeSupabaseError(error)},{status:500})}}
+

@@ -1,124 +1,25 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect */
+import {useEffect,useState} from "react";
+import AppShell from "../components/AppShell";
 
-import { useEffect, useMemo, useState } from "react";
-
-type Item = { id: number; org: string; title: string; platform: string; date: string; tag: string; status: string; tone: string };
-
-const seed: Item[] = [
-  { id: 1, org: "启德教育", title: "2026 全球留学趋势白皮书发布", platform: "微信公众号", date: "07月10日", tag: "行业报告", status: "已分析", tone: "blue" },
-  { id: 2, org: "美世教育", title: "新加坡名校申请私享会", platform: "小红书", date: "07月09日", tag: "线下活动", status: "已分析", tone: "purple" },
-  { id: 3, org: "新东方前途出国", title: "高考后升学，还有哪些路径？", platform: "视频号", date: "07月08日", tag: "路径规划", status: "待分析", tone: "orange" },
-  { id: 4, org: "新航道", title: "雅思课程服务体系 3.0 升级", platform: "官网", date: "07月06日", tag: "产品升级", status: "已分析", tone: "green" },
-];
-
-export default function Home() {
-  const [items, setItems] = useState(seed);
-  const [org, setOrg] = useState("");
-  const [url, setUrl] = useState("");
-  const [note, setNote] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
-  const [notice, setNotice] = useState("");
-  const [tab, setTab] = useState("全部素材");
-  const [modal, setModal] = useState(false);
-  const [reporting, setReporting] = useState(false);
-  const [reportFiles, setReportFiles] = useState<Array<{name:string;url:string}>>([]);
-  const [monitoring, setMonitoring] = useState(false);
-  const [monitorNotice, setMonitorNotice] = useState("");
-  const [monitorName, setMonitorName] = useState("启德教育");
-  const [keywords, setKeywords] = useState("留学报告、广州活动、产品升级");
-  const [sources, setSources] = useState(["官网与新闻", "高校合作公告", "公开活动页"]);
-
-  const visible = useMemo(() => items.filter(i => tab === "全部素材" || (tab === "已分析" ? i.status === "已分析" : i.status === "待分析")), [items, tab]);
-  async function loadMaterials(){const d=await fetch("/api/materials",{cache:"no-store"}).then(r=>r.json()).catch(()=>null);if(d?.materials)setItems(d.materials.map((m:any)=>({id:m.id,org:m.competitors?.name||"未知机构",title:m.title,platform:m.platform||"待识别",date:new Date(m.created_at).toLocaleDateString("zh-CN"),tag:m.tag||"待分类",status:m.status||"待分析",tone:"blue"})))}
-  useEffect(()=>{loadMaterials()},[]);
-
-  async function submit(analyze: boolean) {
-    if (!org.trim() || (!url.trim() && files.length === 0)) { setNotice("请填写机构名称，并添加链接或截图"); return; }
-    const platform = url.includes("xiaohongshu") ? "小红书" : url.includes("weixin") ? "微信公众号" : "待识别";
-    setNotice("正在写入资料库…");
-    const response=await fetch("/api/materials", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ organization:org, title:note || "新收集的外宣内容", sourceUrl:url, platform, status:"待分析", note, sourceType:"manual" }) }).catch(()=>null);
-    const saved=await response?.json().catch(()=>null);
-    if(!response?.ok||!saved?.material?.id){setNotice(`写入失败：${saved?.error||"无法连接数据库，请检查Vercel环境变量"}`);return;}
-    setItems(v => [{ id: Date.now(), org, title: note || "新收集的外宣内容", platform, date: "今天", tag: "待分类", status: analyze ? "已分析" : "待分析", tone: "blue" }, ...v]);
-    for(const file of files){const form=new FormData();form.append("file",file);form.append("materialId",String(saved.material.id));const upload=await fetch("/api/uploads",{method:"POST",body:form});if(!upload.ok){const e=await upload.json().catch(()=>null);setNotice(`素材已入库，但附件上传失败：${e?.error||"未知错误"}`);return;}}
-    let analysisMode="";if(analyze){const analysis=await fetch("/api/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({materialId:saved.material.id,organization:org,title:note||"新收集的外宣内容",sourceUrl:url,note})});const result=await analysis.json().catch(()=>null);if(!analysis.ok){setNotice(`素材已入库，但分析失败：${result?.error?.message||result?.error||"未知错误"}`);return;}analysisMode=result?.mode;}
-    setNotice(analyze ? analysisMode==="basic"?"已归档；OpenAI额度不足，已完成免费基础分析":"已归档并完成AI分析" : "已加入 2026 年 7 月竞品库");
-    setOrg(""); setUrl(""); setNote(""); setFiles([]);
-    await loadMaterials();
-  }
-
-  return <main>
-    <header className="topbar">
-      <div className="brand"><span className="mark">见</span><div>竞见 <small>竞品外宣情报工作台</small></div></div>
-      <nav><a className="active" href="#collect">工作台</a><a href="#monitor">自动监测</a><a href="/review">审核箱</a><a href="/competitors">竞品洞察</a><a href="#reports">报告中心</a></nav>
-      <div className="month">2026 年 7 月⌄</div><button className="avatar">JR</button>
-    </header>
-
-    <section className="hero" id="collect">
-      <div className="eyebrow">COMPETITIVE INTELLIGENCE</div>
-      <h1>把你看到的每一条外宣，<br/><em>变成可行动的市场洞察。</em></h1>
-      <p>只需标注机构、粘贴链接或上传截图。系统将自动识别内容、提炼策略，沉淀进月度竞品库。</p>
-      <div className="stats"><span><b>{items.length + 20}</b> 本月收录</span><span><b>{items.filter(i=>i.status === "已分析").length + 15}</b> 已完成分析</span><span><b>8</b> 监测机构</span></div>
-    </section>
-
-    <section className="workspace">
-      <div className="collector card">
-        <div className="section-title"><div><span className="step">01</span><h2>投递一条外宣素材</h2></div><span className="hint">只需 3 项，其余交给我们</span></div>
-        <div className="form-grid">
-          <label><span>机构名称 <i>*</i></span><input value={org} onChange={e=>setOrg(e.target.value)} placeholder="例如：启德教育 / 美世教育"/></label>
-          <label><span>内容链接</span><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="粘贴小红书、公众号、视频号等链接"/></label>
-        </div>
-        <label><span>截图或素材</span><div className="drop"><input aria-label="上传截图" type="file" multiple accept="image/*,.pdf" onChange={e=>setFiles(Array.from(e.target.files || []))}/><b>＋</b><strong>{files.length ? `已选择 ${files.length} 个文件` : "拖拽或点击上传截图"}</strong><small>{files.length ? files.map(f=>f.name).join("、") : "支持 JPG、PNG、PDF，单个文件不超过 20MB"}</small></div></label>
-        <label><span>想重点关注什么？ <small>选填</small></span><textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="例如：重点看它如何包装长线规划产品，以及结尾如何引导咨询…"/></label>
-        {notice && <div className="notice">✓ {notice}</div>}
-        <div className="actions"><button className="ghost" onClick={()=>submit(false)}>仅加入本月竞品库</button><button className="primary" onClick={()=>submit(true)}>✦ 归档并立即分析</button></div>
-      </div>
-
-      <aside className="flow card"><div className="section-title"><div><span className="step">02</span><h2>我们会自动完成</h2></div></div>
-        <ol>
-          <li><span>01</span><div><b>识别与归档</b><p>平台、账号、时间、标题、内容形式</p></div></li>
-          <li><span>02</span><div><b>内容结构化</b><p>主题、客群、产品、卖点、CTA</p></div></li>
-          <li><span>03</span><div><b>策略分析</b><p>营销目的、转化路径、产品意图</p></div></li>
-          <li><span>04</span><div><b>形成行动建议</b><p>可借鉴、差异化、待验证、勿跟进</p></div></li>
-        </ol>
-        <div className="tip"><b>分析原则</b><p>事实、推断和待验证信息会分别标注，并显示判断置信度。</p></div>
-      </aside>
-    </section>
-
-    <section className="monitor" id="monitor">
-      <div className="monitor-heading"><div><span className="eyebrow">PUBLIC WEB MONITORING</span><h2>让公开网络，成为你的第二个情报入口。</h2><p>自动扫描官网、公开新闻、活动页与高校合作公告；社交平台仍以人工链接和截图补充，保证证据可靠。</p></div><div className="monitor-health"><span className="pulse"></span><div><b>监测服务运行中</b><small>上次扫描：今天 09:30</small></div></div></div>
-      <div className="monitor-grid">
-        <div className="monitor-config card">
-          <div className="section-title"><div><span className="step">A</span><h2>新增监测任务</h2></div><span className="hint">公开来源优先</span></div>
-          <div className="form-grid"><label><span>竞品名称</span><input value={monitorName} onChange={e=>setMonitorName(e.target.value)}/></label><label><span>监测地区</span><select><option>全国 + 广州及大湾区</option><option>仅广州及大湾区</option><option>全国</option></select></label></div>
-          <label><span>关注关键词</span><input value={keywords} onChange={e=>setKeywords(e.target.value)} placeholder="用顿号分隔"/></label>
-          <label><span>公开信息源</span><div className="source-pills">{["官网与新闻","高校合作公告","公开活动页","招聘与组织变化"].map(s=><button type="button" key={s} className={sources.includes(s)?"selected":""} onClick={()=>setSources(v=>v.includes(s)?v.filter(x=>x!==s):[...v,s])}>{sources.includes(s)?"✓ ":"＋ "}{s}</button>)}</div></label>
-          <div className="form-grid"><label><span>扫描频率</span><select><option>每周一、周四</option><option>每天</option><option>每周一次</option></select></label><label><span>发现后处理</span><select><option>先进入审核箱</option><option>自动分析并归档</option></select></label></div>
-          {monitorNotice && <div className="notice">✓ {monitorNotice}</div>}
-          <div className="actions"><button className="ghost">保存为草稿</button><button className="primary" onClick={async()=>{setMonitoring(true);setMonitorNotice("");await fetch("/api/monitors",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({organization:monitorName,keywords,sources,region:"全国 + 广州及大湾区",frequency:"每周一、周四",reviewMode:"先进入审核箱"})}).catch(()=>null);setMonitoring(false);setMonitorNotice(`“${monitorName}”监测任务已启用`);}}>{monitoring?"正在建立监测…":"启用自动监测"}</button></div>
-        </div>
-        <aside className="monitor-summary card">
-          <div className="section-title"><div><span className="step">B</span><h2>本周自动发现</h2></div><a className="text-btn" href="/review">查看审核箱 →</a></div>
-          <div className="discovery-count"><b>12</b><span>条新线索<br/><small>来自 6 家机构</small></span></div>
-          <div className="discoveries"><article><span className="source-dot official">官网</span><div><a href="https://www.eic.org.cn/" target="_blank" rel="noreferrer"><b>启德发布《2026全球留学趋势报告》 ↗</b></a><p>2 小时前 · 与“留学报告”高度相关</p></div><button onClick={()=>setItems(v=>[{id:Date.now(),org:"启德教育",title:"2026全球留学趋势报告",platform:"官网",date:"今天",tag:"自动发现",status:"待分析",tone:"blue"},...v])}>＋ 入库</button></article><article><span className="source-dot school">高校</span><div><a href="https://www.xhd.cn/" target="_blank" rel="noreferrer"><b>新航道与海外院校新增合作项目 ↗</b></a><p>昨天 · 来源可信度 A</p></div><a className="review-link" href="/review?item=2">审核</a></article><article><span className="source-dot event">活动</span><div><a href="https://www.mcedu.com/" target="_blank" rel="noreferrer"><b>美世广州站私享会开始报名 ↗</b></a><p>昨天 · 疑似高净值家庭活动</p></div><a className="review-link" href="/review?item=3">审核</a></article></div>
-          <div className="monitor-rule"><b>自动过滤</b><span>已排除 18 条重复或低相关内容</span></div>
-        </aside>
-      </div>
-      <div className="active-monitors"><div className="active-head"><div><span className="step">C</span><h2>正在运行的任务</h2></div><span>8 家竞品 · 4 类公开来源</span></div><div className="monitor-cards">{[["新东方前途出国","6 个关键词","今天 09:30","3 条新发现"],["启德教育","5 个关键词","今天 09:31","4 条新发现"],["美世教育","4 个关键词","今天 09:33","2 条新发现"],["新航道","5 个关键词","今天 09:35","3 条新发现"]].map((m,i)=><article key={m[0]}><div className={`org ${["orange","blue","purple","green"][i]}`}>{m[0][0]}</div><div><b>{m[0]}</b><p>{m[1]} · 最近扫描 {m[2]}</p></div><span>{m[3]}</span><button>•••</button></article>)}</div></div>
-    </section>
-
-    <section className="library" id="library">
-      <div className="library-head"><div><span className="step">03</span><h2>本月素材库</h2><p>2026 年 7 月 · 已收录 {items.length + 20} 条竞品外宣</p></div><button className="outline">筛选</button></div>
-      <div className="tabs">{["全部素材","已分析","待分析"].map(t=><button onClick={()=>setTab(t)} className={tab===t?"on":""} key={t}>{t}</button>)}</div>
-      <div className="table-wrap"><table><thead><tr><th>机构 / 内容</th><th>平台</th><th>发布时间</th><th>内容标签</th><th>状态</th><th></th></tr></thead><tbody>{visible.map(i=><tr key={i.id}><td><div className={`org ${i.tone}`}>{i.org.slice(0,1)}</div><div><b>{i.org}</b><p>{i.title}</p></div></td><td>{i.platform}</td><td>{i.date}</td><td><span className="tag">{i.tag}</span></td><td><span className={i.status === "已分析" ? "done":"pending"}>● {i.status}</span></td><td><button className="more" onClick={()=>setModal(true)}>•••</button></td></tr>)}</tbody></table></div>
-    </section>
-
-    <section className="insight" id="insight"><div><span className="eyebrow">THIS MONTH’S SIGNAL</span><h2>本月信号：<br/>留学外宣正从“结果炫耀”<br/>转向“<em>过程确定性</em>”。</h2><p>8 家重点机构中，6 家在近期内容中加强了服务流程、顾问配置或申请进度透明化表达。</p></div><div className="signal"><div><span>服务透明化</span><b>↑ 34%</b></div><div><span>路径规划内容</span><b>↑ 21%</b></div><div><span>单纯录取捷报</span><b className="down">↓ 12%</b></div></div></section>
-
-    <section className="report card" id="reports"><div><span className="step">04</span><h2>生成本月竞品报告</h2><p>基于已归档素材，输出管理层摘要、完整报告、展示 PPT 与下月行动清单。</p></div><div className="report-actions"><span>{reportFiles.length?reportFiles.map(f=><a key={f.url} href={f.url}>{f.name}　</a>):"建议先完成全部待分析素材"}</span><button className="primary" onClick={async()=>{setReporting(true);const d=await fetch("/api/reports/generate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({period:"2026年7月"})}).then(r=>r.json()).catch(()=>null);setReportFiles(d?.files||[]);setReporting(false)}}>{reporting ? "正在生成 DOCX 与 PPTX…" : "生成 7 月报告与 PPT →"}</button></div></section>
-
-    <footer>竞见 · 让每一条市场信号，都成为下一步行动的依据。<span>数据口径说明　 隐私与合规</span></footer>
-
-    {modal && <div className="overlay" onClick={()=>setModal(false)}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setModal(false)}>×</button><span className="eyebrow">SINGLE CONTENT ANALYSIS</span><h2>这条内容在做什么？</h2><div className="analysis-grid"><article><small>动作判断</small><b>用权威报告建立专业认知</b><p>通过趋势数据降低用户决策门槛，并为后续咨询提供合理入口。</p></article><article><small>目标人群</small><b>处于早期规划阶段的家长</b><p>尚未确定国家与路径、对政策变化敏感的家庭。</p></article><article><small>转化路径</small><b>报告解读 → 资料领取 → 顾问评估</b><p>以低门槛知识产品承接私域线索。</p></article><article><small>对我方启示</small><b>把“信息”包装成诊断型产品</b><p>输出判断框架，而不只是罗列政策与院校信息。</p></article></div><div className="confidence">判断置信度 <strong>中高</strong>　·　产品意图仍需结合落地页验证</div></div></div>}
-  </main>;
-}
+type Dashboard={kpis:Record<string,number>;recentMaterials:Array<Record<string,any>>;recentLeads:Array<Record<string,any>>;schemaReady:boolean};
+type Competitor={id:string;name:string};
+const empty={organization:"",title:"",sourceUrl:"",platform:"",publishedAt:"",rawText:"",note:"",focusPoints:""};
+export default function Home(){
+  const [dashboard,setDashboard]=useState<Dashboard|null>(null),[competitors,setCompetitors]=useState<Competitor[]>([]),[form,setForm]=useState(empty),[files,setFiles]=useState<File[]>([]),[preview,setPreview]=useState<Record<string,any>|null>(null),[loading,setLoading]=useState(""),[message,setMessage]=useState(""),[allowDuplicate,setAllowDuplicate]=useState(false),[packageUrl,setPackageUrl]=useState("");
+  async function load(){const [d,c]=await Promise.all([fetch("/api/dashboard",{cache:"no-store"}).then(r=>r.json()),fetch("/api/competitors",{cache:"no-store"}).then(r=>r.json())]);setDashboard(d);setCompetitors(c.competitors||[])}useEffect(()=>{load().catch(()=>setMessage("读取数据失败，请查看系统设置。"))},[]);
+  const set=(key:string,value:string)=>{setForm(v=>({...v,[key]:value}));setPreview(null)};
+  async function doPreview(){setLoading("preview");setMessage("");const r=await fetch("/api/materials/preview",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...form,hasAttachments:files.length>0})}),d=await r.json();setLoading("");if(!r.ok)return setMessage(d.error||"预览失败");setPreview(d.preview)}
+  async function submit(analyze:boolean){if(!preview)return setMessage("请先完成入库预览和查重");setLoading(analyze?"analyze":"archive");setMessage("");const r=await fetch("/api/materials",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...form,hasAttachments:files.length>0,allowDuplicate})}),d=await r.json();if(!r.ok){setLoading("");return setMessage(d.error||"写入失败")}for(let i=0;i<files.length;i++){const fd=new FormData();fd.append("file",files[i]);fd.append("materialId",d.material.id);fd.append("sortOrder",String(i));fd.append("isPrimary",String(i===0));const up=await fetch("/api/uploads",{method:"POST",body:fd});if(!up.ok){const e=await up.json();setLoading("");return setMessage(`素材已入库，但附件上传失败：${e.error}`)}}if(analyze){const a=await fetch("/api/analyze",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({materialId:d.material.id})}),ad=await a.json();if(!a.ok){setLoading("");return setMessage(`素材已入库，但分析失败：${ad.error}`)}setMessage(ad.mode==="ai"?"素材已入库并完成结构化AI分析。":`素材已入库并完成规则分析；内部AI状态：${ad.errorCode||"不可用"}。可导出外部AI分析包。`)}else setMessage("素材已成功加入正式素材库。");setForm(empty);setFiles([]);setPreview(null);setAllowDuplicate(false);setLoading("");await load()}
+  async function exportPackage(){setLoading("package");const r=await fetch("/api/external-ai/export",{method:"POST",headers:{"content-type":"application/json"},body:"{}"}),d=await r.json();setLoading("");if(!r.ok)return setMessage(d.error||"分析包生成失败");setPackageUrl(d.downloadUrl);setMessage(`外部AI分析包已生成，共 ${d.counts.total} 条素材。`)}
+  const k=dashboard?.kpis||{},cards=[
+    ["本月新增素材",k.monthMaterials||0,"/materials?period=month"],["待审核线索",k.pendingLeads||0,"/review?status=pending"],["待分析素材",k.pendingAnalysis||0,"/materials?analysisStatus=pending"],["待人工复核",k.pendingHumanReview||0,"/analysis?humanReviewStatus=pending"],["正在监测机构",k.activeMonitors||0,"/monitoring"],["本月宣传事件",k.monthEvents||0,"/materials?view=events"],["分析失败/额度不足",k.analysisFailures||0,"/analysis?status=failed"],
+  ];
+  return <AppShell><section className="dashboard-hero"><div><span className="eyebrow">LIVE DATA WORKSPACE</span><h1>把每一条外宣，变成<br/><em>可追溯的市场情报。</em></h1><p>单条投递、批量导入和公开网络监测统一进入 Supabase；所有统计均来自当前真实数据。</p></div><div className="hero-actions"><button className="primary" onClick={()=>document.getElementById("submission")?.scrollIntoView()}>投递素材</button><a className="ghost button-link" href="/imports">批量导入</a><button className="ghost" onClick={exportPackage}>{loading==="package"?"正在打包…":"导出外部AI分析包"}</button>{packageUrl&&<a className="download-link" href={packageUrl}>下载最新分析包 ↓</a>}</div></section>
+    {!dashboard?.schemaReady&&<div className="schema-warning">数据库仍是旧版结构。旧功能可继续使用；请在 Supabase 执行本次 migration 后启用完整状态、事件、报告和外部AI包。</div>}
+    <section className="kpi-grid">{cards.map(([label,num,href])=><a className="kpi-card" href={String(href)} key={String(label)}><span>{label}</span><b>{num}</b><small>查看对应记录 →</small></a>)}</section>
+    <section className="dashboard-grid" id="submission"><article className="card panel"><div className="panel-head"><div><span className="step">01</span><h2>单条素材投递</h2></div><span className="hint">先预览查重，再正式入库</span></div><div className="form-grid"><label><span>标准机构 *</span><input list="competitors" value={form.organization} onChange={e=>set("organization",e.target.value)} placeholder="选择或输入新机构"/><datalist id="competitors">{competitors.map(c=><option key={c.id}>{c.name}</option>)}</datalist></label><label><span>标题</span><input value={form.title} onChange={e=>set("title",e.target.value)} placeholder="可在预览前人工修正"/></label><label><span>原始链接</span><input value={form.sourceUrl} onChange={e=>set("sourceUrl",e.target.value)} placeholder="小红书、公众号、官网等"/></label><label><span>平台</span><input value={form.platform} onChange={e=>set("platform",e.target.value)} placeholder="留空则按链接识别"/></label><label><span>发布时间</span><input type="datetime-local" value={form.publishedAt} onChange={e=>set("publishedAt",e.target.value)}/></label><label><span>截图或附件</span><input type="file" multiple accept="image/*,.pdf,.txt,.docx" onChange={e=>{setFiles(Array.from(e.target.files||[]));setPreview(null)}}/></label></div><label><span>原始正文</span><textarea value={form.rawText} onChange={e=>set("rawText",e.target.value)} placeholder="若链接无法抓取，可直接粘贴正文；系统不会伪造抓取结果。"/></label><div className="form-grid"><label><span>用户备注</span><textarea value={form.note} onChange={e=>set("note",e.target.value)} placeholder="补充你的观察"/></label><label><span>关注重点</span><textarea value={form.focusPoints} onChange={e=>set("focusPoints",e.target.value)} placeholder="例如产品包装、CTA、客群"/></label></div>{files.length>0&&<div className="file-list">{files.map(f=><span key={f.name}>{f.name}</span>)}</div>}{message&&<div className="notice">{message}</div>}<div className="actions"><button className="ghost" onClick={doPreview} disabled={Boolean(loading)}>{loading==="preview"?"正在识别与查重…":"预览并查重"}</button>{preview&&<><button className="ghost" onClick={()=>submit(false)} disabled={Boolean(loading)}>{loading==="archive"?"正在入库…":"确认入库"}</button><button className="primary" onClick={()=>submit(true)} disabled={Boolean(loading)}>{loading==="analyze"?"正在入库并分析…":"入库并分析"}</button></>}</div></article>
+    <aside className="card panel preview-panel"><div className="panel-head"><div><span className="step">02</span><h2>入库预览</h2></div></div>{preview?<div className="preview-content"><dl><dt>识别机构</dt><dd>{preview.competitor?.name}{preview.competitor?.unmapped&&"（新机构）"}</dd><dt>标题 / 平台</dt><dd>{preview.title} · {preview.platform}</dd><dt>发布时间</dt><dd>{preview.publishedAt||"待核"}</dd><dt>原始链接</dt><dd className="break">{preview.sourceUrl||"无"}</dd><dt>建议标签</dt><dd>{preview.suggestedTags?.join("、")||"待人工标注"}</dd><dt>识别置信度</dt><dd>{Math.round((preview.confidence||0)*100)}%</dd></dl><div className={preview.duplicates?.length?"duplicate-box danger":"duplicate-box"}><b>{preview.duplicates?.length?`发现 ${preview.duplicates.length} 条重复/相似记录`:"未发现相同链接或正文哈希"}</b>{preview.duplicates?.map((x:Record<string,any>)=><a key={x.id} href={`/materials?id=${x.id}`}>{x.reason} · {x.title}</a>)}</div>{preview.duplicates?.length>0&&<label className="check-line"><input type="checkbox" checked={allowDuplicate} onChange={e=>setAllowDuplicate(e.target.checked)}/>仍作为独立素材入库</label>}</div>:<div className="empty-state"><b>尚未生成预览</b><p>填写机构，并提供链接、正文或附件后点击“预览并查重”。无法识别的字段会明确标记待核，不会伪造。</p></div>}</aside></section>
+    <section className="dashboard-grid"><article className="card panel"><div className="panel-head"><div><span className="step">03</span><h2>最近入库素材</h2></div><a href="/materials">查看素材库 →</a></div><div className="compact-list">{dashboard?.recentMaterials?.map(m=><a href={`/materials?id=${m.id}`} key={m.id}><div><b>{m.competitors?.name||"未知机构"}</b><p>{m.title}</p></div><span>{m.platform||"待识别"} · {new Date(m.created_at).toLocaleDateString("zh-CN")}</span></a>)}{dashboard&&!dashboard.recentMaterials?.length&&<div className="empty-state"><b>暂无正式素材</b><p>先投递一条内容，或前往导入导出页面批量导入。</p></div>}</div></article><article className="card panel"><div className="panel-head"><div><span className="step">04</span><h2>最近监测线索</h2></div><a href="/review">进入审核箱 →</a></div><div className="compact-list">{dashboard?.recentLeads?.map(m=><a href={`/review?id=${m.id}`} key={m.id}><div><b>{m.competitors?.name||"未知机构"}</b><p>{m.title}</p></div><span>{m.status}</span></a>)}{dashboard&&!dashboard.recentLeads?.length&&<div className="empty-state"><b>暂无自动发现线索</b><p>创建监测任务并手动运行一次，结果会进入审核箱。</p><a href="/monitoring">创建监测任务 →</a></div>}</div></article></section>
+  </AppShell>}

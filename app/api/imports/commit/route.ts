@@ -1,0 +1,12 @@
+import {getSupabaseAdmin,describeSupabaseError} from "../../../../lib/supabase-admin";
+import {createMaterial,findDuplicates} from "../../../../lib/repository";
+
+export async function POST(req:Request){
+  try{
+    const {jobId,rows,duplicateMode="skip"}=await req.json() as {jobId:string;rows:Array<{rowNumber:number;normalized:Record<string,string>;errors:string[]}>;duplicateMode:"skip"|"import"|"merge"},sb=getSupabaseAdmin();if(!jobId||!Array.isArray(rows))return Response.json({error:"导入任务或数据缺失"},{status:400});
+    const summary={success:0,skipped:0,failed:0,merged:0,errors:[] as Array<{rowNumber:number;message:string}>};
+    for(const row of rows){try{if(row.errors?.length)throw new Error(row.errors.join("；"));const normalized={organization:row.normalized.organization||"",title:row.normalized.title||"",sourceUrl:row.normalized.sourceUrl||"",rawText:row.normalized.rawText||"",publishedAt:row.normalized.publishedAt||"",platform:row.normalized.platform||"",note:row.normalized.note||"",focusPoints:row.normalized.focusPoints||""};const duplicates=await findDuplicates(sb,normalized);if(duplicates.length&&duplicateMode==="skip"){summary.skipped++;await sb.from("import_job_rows").update({status:"skipped",duplicate_material_id:duplicates[0].id}).eq("import_job_id",jobId).eq("row_number",row.rowNumber);continue}if(duplicates.length&&duplicateMode==="merge"){summary.merged++;await sb.from("import_job_rows").update({status:"merged",duplicate_material_id:duplicates[0].id}).eq("import_job_id",jobId).eq("row_number",row.rowNumber);continue}const material=await createMaterial(sb,{...normalized,publishedAt:normalized.publishedAt||undefined,sourceType:"batch_import",importJobId:jobId});summary.success++;await sb.from("import_job_rows").update({status:"imported",material_id:material.id}).eq("import_job_id",jobId).eq("row_number",row.rowNumber)}catch(error){summary.failed++;const message=describeSupabaseError(error);summary.errors.push({rowNumber:row.rowNumber,message});await sb.from("import_job_rows").update({status:"failed",errors:[message]}).eq("import_job_id",jobId).eq("row_number",row.rowNumber)}}
+    await sb.from("import_jobs").update({status:summary.failed&&summary.success?"partial":summary.failed?"failed":"completed",success_rows:summary.success,skipped_rows:summary.skipped+summary.merged,failed_rows:summary.failed}).eq("id",jobId);
+    return Response.json({jobId,summary});
+  }catch(error){return Response.json({error:describeSupabaseError(error)},{status:500})}
+}
