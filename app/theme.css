@@ -1,6 +1,6 @@
 :root {
   --ink: #0a0a0a;
-  --muted: #6f6b67;
+  --muted: #5f5a56;
   --cream: #080808;
   --paper: #f4efeb;
   --paper-bright: #fffaf6;
@@ -101,7 +101,7 @@ select:focus-visible {
   margin-top: 4px;
   color: #a8a5a1;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 400;
   letter-spacing: 1.25px;
 }
@@ -237,7 +237,7 @@ select:focus-visible {
 }
 
 .eyebrow {
-  color: #8580e6;
+  color: #5e58bf;
   font-family: var(--mono);
   font-size: 9px;
   letter-spacing: 2.2px;
@@ -277,7 +277,7 @@ select:focus-visible {
 
 .dashboard-hero p {
   max-width: 660px;
-  color: #55514d;
+  color: #45413e;
   font-size: 14px;
   line-height: 1.75;
 }
@@ -383,9 +383,9 @@ select:focus-visible {
   transform: translateY(-2px);
 }
 
-.kpi-card span { color: #5c5753; font-family: var(--mono); font-size: 10px; font-weight: 500; }
+.kpi-card span { color: #4f4a46; font-family: var(--mono); font-size: 10px; font-weight: 600; }
 .kpi-card b { margin: 10px 0; color: #050505; font-family: var(--mono); font-size: 38px; font-weight: 500; }
-.kpi-card small { color: #76716d; font-family: var(--mono); font-size: 9px; }
+.kpi-card small { color: #625d58; font-family: var(--mono); font-size: 10px; }
 
 label > span { color: #262320; font-family: var(--mono); font-size: 11px; font-weight: 600; }
 
@@ -400,7 +400,7 @@ select {
 }
 
 input::placeholder,
-textarea::placeholder { color: #96918c; }
+textarea::placeholder { color: #746e69; }
 
 input:focus,
 textarea:focus,
