@@ -2,9 +2,9 @@
 
 - Source visual truth: `/Users/jingru/Desktop/微信图片_20260713164438_519_183.jpg`
 - Preview: `https://jingjian-competitor-intelligence-p1vaq0m72.vercel.app/`
-- Accepted implementation screenshots: `design-audit/01-dashboard-desktop.png`, `design-audit/02-competitors-empty-desktop.png`
-- Captured viewports: 1894 × 921 and 1908 × 921
-- States: dashboard with live KPI data; competitor archive with no loaded master data
+- Accepted implementation screenshots: `design-audit/01-dashboard-desktop.png`, `design-audit/02-competitors-empty-desktop.png`, `design-audit/03-dashboard-mobile.jpg`, `design-audit/04-materials-mobile.jpg`, `design-audit/05-review-mobile.jpg`
+- Captured viewports: 1894 × 921, 1908 × 921, and three 1280 × 2781 mobile browser screenshots supplied by the user
+- States: dashboard with live KPI data; competitor archive with no loaded master data; dashboard, material library, and review inbox on mobile
 
 ## Step 1 — Dashboard entry
 
@@ -43,16 +43,58 @@ Finding resolved after comparison:
 
 - [P1] The empty-state message occupied only the 310px sidebar column, leaving a large unexplained blank area and making the screen look partially loaded. The empty state now spans the full workspace, is centered vertically and horizontally, and uses a more deliberate text width and heading scale.
 
+## Step 3 — Dashboard on mobile
+
+General health: good, with a shared header correction required.
+
+Strengths:
+
+- The editorial hero remains readable and the highlighted second line survives the narrow viewport without clipping.
+- The two-column KPI layout is balanced, and the pastel accent cards stay restrained against the warm work surface.
+- Primary and secondary actions remain distinguishable and have sufficiently large visible tap areas.
+
+Finding addressed in code:
+
+- [P1] The brand, online status, and navigation were compressed into one row. Only the first three navigation destinations were visible and horizontal continuation was not obvious. The mobile header now uses a first row for brand/status and a separate full-width scrolling navigation row with snap points.
+
+## Step 4 — Material library on mobile
+
+General health: needs responsive correction; the filter area is usable and the batch action area was broken in the captured state.
+
+Strengths:
+
+- The page heading, filter surface, and action hierarchy preserve the desktop visual language.
+- Search and select fields reflow into a practical two-column layout.
+
+Finding addressed in code:
+
+- [P1] The batch selection label collapsed into one character per line and the rightmost action was cut off. The mobile batch bar now uses a two-column action grid, keeps the selection count on its own row, allows button labels to wrap, and removes horizontal clipping.
+
+## Step 5 — Review inbox on mobile
+
+General health: good, with the same shared header correction as Step 3.
+
+Strengths:
+
+- All four review tabs fit without truncation and the active state is unmistakable.
+- Both empty-state panels have clear hierarchy, comfortable spacing, and direct next-step copy.
+- The black, warm white, and lavender balance remains consistent with the source reference.
+
+Accessibility evidence limits for mobile:
+
+- The screenshots show visible tap target sizes and reflow, but do not prove focus order, screen-reader naming, zoom behavior, or touch interaction quality.
+- The browser chrome means the evidence represents the actual mobile browsing context, but viewport CSS dimensions cannot be derived exactly from the image pixels alone.
+
 ## Remaining evidence gaps
 
 - No accepted screenshot yet for a populated competitor profile/detail route.
 - No accepted screenshot yet for dense tables, review drawer, reports, or settings.
-- No accepted 390px mobile screenshot yet, so navigation overflow and responsive reflow remain unverified.
+- No post-fix mobile screenshot yet for the two-row header and material batch grid, so those corrections still need visual confirmation after deployment.
 
 ## Next captures
 
 - Competitor profile at desktop width.
-- Dashboard or competitor profile at approximately 390 × 844.
-- One dense list/table route at desktop width.
+- Material library on mobile after the responsive fix is deployed.
+- One populated competitor profile or dense list/table route at desktop width.
 
 final result: blocked
