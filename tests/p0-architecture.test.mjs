@@ -31,10 +31,11 @@ test("external AI package contains required handoff artifacts",async()=>{
   const route=await read("app/api/external-ai/export/route.ts");
   for(const file of ["README.md","AI分析任务指令.md","素材明细.xlsx","素材明细.md","素材数据.json","机构背景资料.md","已有分析结果.xlsx","外部AI分析回填模板.xlsx","证据索引.xlsx"]){assert.match(route,new RegExp(file.replace(".","\\.")))}
   assert.match(route,/assets\//);
+  assert.match(route,/external-ai\/\$\{job\.data\.id\}\/competitor-analysis-package-/);
+  assert.doesNotMatch(route,/objectPath=`[^`]*竞对外宣分析包/);
 });
 
 test("all P0 application routes exist",async()=>{
   const paths=["app/materials/page.tsx","app/review/page.tsx","app/monitoring/page.tsx","app/competitors/page.tsx","app/analysis/page.tsx","app/reports/page.tsx","app/imports/page.tsx","app/settings/page.tsx"];
   await Promise.all(paths.map(path=>access(new URL(path,root))));
 });
-
