@@ -2,9 +2,9 @@
 
 - Source visual truth: `/Users/jingru/Desktop/微信图片_20260713164438_519_183.jpg`
 - Preview: `https://jingjian-competitor-intelligence-p1vaq0m72.vercel.app/`
-- Accepted implementation screenshot: `design-audit/01-dashboard-desktop.png`
-- Captured viewport: 1894 × 921
-- State: dashboard landing page with live KPI data and empty submission preview
+- Accepted implementation screenshots: `design-audit/01-dashboard-desktop.png`, `design-audit/02-competitors-empty-desktop.png`
+- Captured viewports: 1894 × 921 and 1908 × 921
+- States: dashboard with live KPI data; competitor archive with no loaded master data
 
 ## Step 1 — Dashboard entry
 
@@ -30,9 +30,22 @@ Accessibility evidence limits:
 - The screenshot supports a visual contrast and target-size review only; it does not prove keyboard order, screen-reader labels, focus handling, or full WCAG conformance.
 - The submitted screenshot does not show hover, focus, validation, loading, or error states.
 
+## Step 2 — Competitor archive empty state
+
+General health: needs a small layout correction; visual language is consistent.
+
+Strengths:
+
+- Page heading, action button, KPI summary, dark canvas, and warm workspace remain consistent with the dashboard.
+- The active navigation state and primary action are easy to identify.
+
+Finding resolved after comparison:
+
+- [P1] The empty-state message occupied only the 310px sidebar column, leaving a large unexplained blank area and making the screen look partially loaded. The empty state now spans the full workspace, is centered vertically and horizontally, and uses a more deliberate text width and heading scale.
+
 ## Remaining evidence gaps
 
-- No accepted screenshot yet for the competitor profile/detail route.
+- No accepted screenshot yet for a populated competitor profile/detail route.
 - No accepted screenshot yet for dense tables, review drawer, reports, or settings.
 - No accepted 390px mobile screenshot yet, so navigation overflow and responsive reflow remain unverified.
 

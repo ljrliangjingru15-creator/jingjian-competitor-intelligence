@@ -513,6 +513,32 @@ input[type="file"]::file-selector-button {
 
 .review-layout,
 .competitor-shell { gap: 14px; }
+
+.competitor-shell:has(.competitor-list > .empty-state) {
+  min-height: 280px;
+  grid-template-columns: 1fr;
+  margin-bottom: 0;
+}
+
+.competitor-list:has(> .empty-state) {
+  display: grid;
+  place-items: center;
+}
+
+.competitor-list > .empty-state {
+  width: min(100%, 640px);
+  padding: 64px 28px;
+}
+
+.competitor-list > .empty-state b {
+  font-size: 22px;
+  letter-spacing: -1px;
+}
+
+.competitor-list > .empty-state p {
+  max-width: 440px;
+  margin: 10px auto 0;
+}
 .review-list { border-radius: var(--radius-xl); }
 .review-tabs { gap: 3px; padding: 6px; border: 0; background: #0a0a0a; }
 .review-tabs button { border-radius: 4px; color: #a7a3a0; font-family: var(--mono); }
